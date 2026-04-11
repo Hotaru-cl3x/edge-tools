@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barnett Edge — 技術仕様書 | Edge Tools</title>
+  <meta name="description" content="Barnett Edgeの実装アルゴリズム・状態管理・数式を解説する技術仕様書。バーネット法をリアルタイム自動計算するツール（barnett-tool.js）。1→3→2→6単位という意図的なステップダウンを含む固定ラダーをSTEPS=[1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></a>
+      <nav class="nav-main">
+        <a href="../index.html#betting">ベッティング</a>
+        <a href="../index.html#analysis">分析</a>
+        <a href="../index.html#blackjack">ブラックジャック</a>
+        <a href="https://cl3x.com/barnett-edge/" target="_blank" rel="noopener noreferrer nofollow" class="nav-cta">ツールを使う →</a>
+      </nav>
+      <button class="nav-toggle" aria-label="メニュー"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <nav class="breadcrumb"><a href="../index.html">Home</a><span>›</span><span>Barnett Edge</span></nav>
+    <p class="page-eyebrow">Positive Progression</p>
+    <h1 class="page-title">Barnett Edge</h1>
+    <p class="page-desc">バーネット法をリアルタイム自動計算するツール（barnett-tool.js）。1→3→2→6単位という意図的なステップダウンを含む固定ラダーをSTEPS=[1,3,2,6]配列で実装。2連勝時に3→2へダウンして部分利益を確保してから最大ベット（6単位）に移行する独自設計。</p>
+    <a href="https://cl3x.com/barnett-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">ツールを無料で使う →</a>
+  </div>
+
+  <div class="specs-section">
+
+    <div class="detail-section">
+      <h2>基本仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>システム種別</code></td><td class="logic-val">Positive Progression / Fixed Step with Step-down</td></tr>
+      <tr><td class="logic-key"><code>対象ゲーム</code></td><td class="logic-val">バカラ・ルーレット（2倍配当）</td></tr>
+      <tr><td class="logic-key"><code>ステップ配列</code></td><td class="logic-val">STEPS = [1, 3, 2, 6]（step2でダウン）</td></tr>
+      <tr><td class="logic-key"><code>4連勝以降</code></td><td class="logic-val">6単位キープ</td></tr>
+      <tr><td class="logic-key"><code>リスク</code></td><td class="logic-val">Medium</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>実装アルゴリズム</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">JavaScriptソースコードから抽出したコアロジックです。</p>
+      <pre class="code-block"><code>// 意図的ステップダウン設計（barnett-tool.js）
+var STEPS = [1, 3, 2, 6];
+//           0  1  2  3  ← インデックス
+// step1: 3単位 → step2: 2単位（意図的にダウン）
+
+S = { si:0, streak:0, ... }
+
+if (r === 'win') {
+    S.pnl += ba;
+    S.streak++;
+    if (S.si &lt; STEPS.length - 1) S.si++;
+} else {
+    S.pnl -= ba;
+    S.si = 0; S.streak = 0;  // リセット
+}
+
+// ベット計算（4連勝以降は6単位キープ）
+var si = Math.min(S.si, STEPS.length - 1);
+var ba = STEPS[si] * S.u;
+// si=0:1u, si=1:3u, si=2:2u(ダウン), si=3:6u</code></pre>
+    </div>
+
+    <div class="detail-section">
+      <h2>数式・計算仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>ステップ配列</code></td><td class="logic-val">STEPS = [1, 3, 2, 6]</td></tr>
+      <tr><td class="logic-key"><code>step2のダウン</code></td><td class="logic-val">3→2（2連勝時の意図的な賭け金減少）</td></tr>
+      <tr><td class="logic-key"><code>4連勝以降</code></td><td class="logic-val">6単位キープ</td></tr>
+      <tr><td class="logic-key"><code>グッドマン（5u）との比較</code></td><td class="logic-val">バーネットは最終ベット6単位（+1単位高い）</td></tr>
+      <tr><td class="logic-key"><code>ステップダウンの意図</code></td><td class="logic-val">中間利益を確保してからリスクを上げる設計</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>メリット・デメリット</h2>
+      <h3>✓ メリット</h3>
+    <ul>
+      <li>ステップダウンで中間利益を部分確保する独自設計</li>
+      <li>グッドマンより最終ベットが大きく連勝時の利益が高い</li>
+      <li>STEPS配列の変更だけで別バリアントに応用可能</li>
+    </ul>
+      <h3>✗ デメリット・注意点</h3>
+    <ul>
+      <li>step2のダウン（3→2）が直感に反しわかりにくい</li>
+      <li>3連勝前の損失は全投資分（1+3+2=6単位）</li>
+    </ul>
+    </div>
+
+    <div class="cta-block">
+      <p>実際のツールはこちらから無料・登録不要で使えます</p>
+      <a href="https://cl3x.com/barnett-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">Barnett Edge を使ってみる →</a>
+    </div>
+
+  </div>
+
+  <div class="other-tools">
+    <div class="other-tools-inner">
+      <h2>他のツール</h2>
+      <div class="other-tools-grid">
+        <a href="martingale-edge.html" class="other-tool-link">Martingale Edge</a>
+        <a href="parlay-edge.html" class="other-tool-link">Parlay Edge</a>
+        <a href="dalembert-edge.html" class="other-tool-link">D'Alembert Edge</a>
+        <a href="oscars-grind-edge.html" class="other-tool-link">Oscar's Grind Edge</a>
+        <a href="montecarlo-edge.html" class="other-tool-link">Montecarlo Edge</a>
+        <a href="labouchere-edge.html" class="other-tool-link">Labouchere Edge</a>
+        <a href="reverse-labouchere-edge.html" class="other-tool-link">Reverse Labouchere Edge</a>
+        <a href="fibonacci-edge.html" class="other-tool-link">Fibonacci Edge</a>
+        <a href="2in1-edge.html" class="other-tool-link">2in1 Edge</a>
+        <a href="winners-edge.html" class="other-tool-link">Winners Edge</a>
+        <a href="champion-game-edge.html" class="other-tool-link">Champion Game Edge</a>
+        <a href="31-system-edge.html" class="other-tool-link">31 System Edge</a>
+        <a href="goodman-edge.html" class="other-tool-link">Goodman Edge</a>
+        <a href="paroli137-edge.html" class="other-tool-link">Paroli137 Edge</a>
+        <a href="vegasprogression-edge.html" class="other-tool-link">Vegas Progression Edge</a>
+        <a href="east-coast-progression-edge.html" class="other-tool-link">East Coast Progression Edge</a>
+        <a href="onehalfup-edge.html" class="other-tool-link">One Half Up Edge</a>
+        <a href="baccarat-pattern-tracker.html" class="other-tool-link">Baccarat Pattern Tracker</a>
+        <a href="baccarat-pattern-tracker-daai-ngaan-jai.html" class="other-tool-link">Baccarat Pattern Tracker 大眼仔</a>
+        <a href="spispi.html" class="other-tool-link">スピスピ</a>
+        <a href="bs-strategy-edge.html" class="other-tool-link">BS Strategy Edge</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></div>
+      <p class="footer-desc">全ツールは <a href="https://cl3x.com/" target="_blank" rel="noopener noreferrer nofollow">cl3x.com</a> およびサブドメインにて無料公開中。</p>
+      <p class="footer-note">⚠ 当ツールはエンターテインメント目的です。ギャンブルへの参加は自己責任において行ってください。</p>
+    </div>
+  </footer>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

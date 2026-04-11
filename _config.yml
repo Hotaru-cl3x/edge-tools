@@ -1,0 +1,15 @@
+# GitHub Pages 設定ファイル
+# Jekyll設定（テーマなし・シンプルHTML）
+
+# サイト基本情報
+title: "Edge Tools"
+description: "カジノベッティングシステム自動計算ツール集"
+url: ""  # GitHubリポジトリに合わせて設定
+
+# Jekyll無効化（静的HTMLをそのまま配信）
+plugins: []
+
+# 除外ファイル
+exclude:
+  - README.md
+  - "*.sh"

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スピスピ — 技術仕様書 | Edge Tools</title>
+  <meta name="description" content="スピスピの実装アルゴリズム・状態管理・数式を解説する技術仕様書。バカラの出現統計に基づいた重み付きランダム抽選ツール。BANKER・PLAYER・TIEの統計的出現確率に従った重み付き乱数でベット先を瞬時に提示。判断迷いを解">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></a>
+      <nav class="nav-main">
+        <a href="../index.html#betting">ベッティング</a>
+        <a href="../index.html#analysis">分析</a>
+        <a href="../index.html#blackjack">ブラックジャック</a>
+        <a href="https://baccarat.cl3x.com/spispi/" target="_blank" rel="noopener noreferrer nofollow" class="nav-cta">ツールを使う →</a>
+      </nav>
+      <button class="nav-toggle" aria-label="メニュー"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <nav class="breadcrumb"><a href="../index.html">Home</a><span>›</span><span>スピスピ</span></nav>
+    <p class="page-eyebrow">Randomized Oracle</p>
+    <h1 class="page-title">スピスピ</h1>
+    <p class="page-desc">バカラの出現統計に基づいた重み付きランダム抽選ツール。BANKER・PLAYER・TIEの統計的出現確率に従った重み付き乱数でベット先を瞬時に提示。判断迷いを解消するエンターテインメント用途のツール。</p>
+    <a href="https://baccarat.cl3x.com/spispi/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">ツールを無料で使う →</a>
+  </div>
+
+  <div class="specs-section">
+
+    <div class="detail-section">
+      <h2>基本仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>ツール種別</code></td><td class="logic-val">Weighted Random Selector</td></tr>
+      <tr><td class="logic-key"><code>対象</code></td><td class="logic-val">バカラ</td></tr>
+      <tr><td class="logic-key"><code>出力</code></td><td class="logic-val">BANKER / PLAYER / TIE（1タップで即時）</td></tr>
+      <tr><td class="logic-key"><code>重み付け根拠</code></td><td class="logic-val">バカラの統計的出現確率</td></tr>
+      <tr><td class="logic-key"><code>複雑度</code></td><td class="logic-val">Low</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>実装アルゴリズム</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">JavaScriptソースコードから抽出したコアロジックです。</p>
+      <pre class="code-block"><code>// 重み付き乱数選択
+const weights = {
+    BANKER: 0.4586,  // ≈ 45.86%
+    PLAYER: 0.4462,  // ≈ 44.62%
+    TIE:    0.0952   // ≈  9.52%
+};
+
+function weightedRandom(weights) {
+    var rand = Math.random();  // 一様乱数 [0, 1)
+    var cumulative = 0;
+    for (var key in weights) {
+        cumulative += weights[key];
+        if (rand &lt; cumulative) return key;
+    }
+}
+
+// rand = 0.0000 〜 0.4586 → BANKER
+// rand = 0.4586 〜 0.9048 → PLAYER
+// rand = 0.9048 〜 1.0000 → TIE</code></pre>
+    </div>
+
+    <div class="detail-section">
+      <h2>数式・計算仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>BANKER重み</code></td><td class="logic-val">≈ 45.86%（コミッション前の理論値）</td></tr>
+      <tr><td class="logic-key"><code>PLAYER重み</code></td><td class="logic-val">≈ 44.62%</td></tr>
+      <tr><td class="logic-key"><code>TIE重み</code></td><td class="logic-val">≈ 9.52%</td></tr>
+      <tr><td class="logic-key"><code>独立性</code></td><td class="logic-val">各試行は完全に独立（マルコフ性なし）</td></tr>
+      <tr><td class="logic-key"><code>乱数生成</code></td><td class="logic-val">Math.random()（一様乱数 [0, 1)）</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>メリット・デメリット</h2>
+      <h3>✓ メリット</h3>
+    <ul>
+      <li>重み付きランダムでバカラの実際の出現分布に近い結果を生成</li>
+      <li>実装が単純でレイテンシが極めて低い</li>
+      <li>ゲーム中の判断迷いを即座に解消するUI設計</li>
+    </ul>
+      <h3>✗ デメリット・注意点</h3>
+    <ul>
+      <li>各試行は独立しており前の結果に予測力はない</li>
+      <li>エンターテインメント目的であり戦略的根拠はない</li>
+    </ul>
+    </div>
+
+    <div class="cta-block">
+      <p>実際のツールはこちらから無料・登録不要で使えます</p>
+      <a href="https://baccarat.cl3x.com/spispi/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">スピスピ を使ってみる →</a>
+    </div>
+
+  </div>
+
+  <div class="other-tools">
+    <div class="other-tools-inner">
+      <h2>他のツール</h2>
+      <div class="other-tools-grid">
+        <a href="martingale-edge.html" class="other-tool-link">Martingale Edge</a>
+        <a href="parlay-edge.html" class="other-tool-link">Parlay Edge</a>
+        <a href="dalembert-edge.html" class="other-tool-link">D'Alembert Edge</a>
+        <a href="oscars-grind-edge.html" class="other-tool-link">Oscar's Grind Edge</a>
+        <a href="montecarlo-edge.html" class="other-tool-link">Montecarlo Edge</a>
+        <a href="labouchere-edge.html" class="other-tool-link">Labouchere Edge</a>
+        <a href="reverse-labouchere-edge.html" class="other-tool-link">Reverse Labouchere Edge</a>
+        <a href="fibonacci-edge.html" class="other-tool-link">Fibonacci Edge</a>
+        <a href="2in1-edge.html" class="other-tool-link">2in1 Edge</a>
+        <a href="winners-edge.html" class="other-tool-link">Winners Edge</a>
+        <a href="champion-game-edge.html" class="other-tool-link">Champion Game Edge</a>
+        <a href="31-system-edge.html" class="other-tool-link">31 System Edge</a>
+        <a href="goodman-edge.html" class="other-tool-link">Goodman Edge</a>
+        <a href="barnett-edge.html" class="other-tool-link">Barnett Edge</a>
+        <a href="paroli137-edge.html" class="other-tool-link">Paroli137 Edge</a>
+        <a href="vegasprogression-edge.html" class="other-tool-link">Vegas Progression Edge</a>
+        <a href="east-coast-progression-edge.html" class="other-tool-link">East Coast Progression Edge</a>
+        <a href="onehalfup-edge.html" class="other-tool-link">One Half Up Edge</a>
+        <a href="baccarat-pattern-tracker.html" class="other-tool-link">Baccarat Pattern Tracker</a>
+        <a href="baccarat-pattern-tracker-daai-ngaan-jai.html" class="other-tool-link">Baccarat Pattern Tracker 大眼仔</a>
+        <a href="bs-strategy-edge.html" class="other-tool-link">BS Strategy Edge</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></div>
+      <p class="footer-desc">全ツールは <a href="https://cl3x.com/" target="_blank" rel="noopener noreferrer nofollow">cl3x.com</a> およびサブドメインにて無料公開中。</p>
+      <p class="footer-note">⚠ 当ツールはエンターテインメント目的です。ギャンブルへの参加は自己責任において行ってください。</p>
+    </div>
+  </footer>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

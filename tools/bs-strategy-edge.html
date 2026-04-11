@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BS Strategy Edge — 技術仕様書 | Edge Tools</title>
+  <meta name="description" content="BS Strategy Edgeの実装アルゴリズム・状態管理・数式を解説する技術仕様書。ビデオブラックジャック専用のベーシックストラテジー参照ツール。ディーラーのアップカードとプレイヤーの手札を選択するだけで最適アクション（HIT/STAND/DO">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></a>
+      <nav class="nav-main">
+        <a href="../index.html#betting">ベッティング</a>
+        <a href="../index.html#analysis">分析</a>
+        <a href="../index.html#blackjack">ブラックジャック</a>
+        <a href="https://blackjack.cl3x.com/bs-strategy-edge/" target="_blank" rel="noopener noreferrer nofollow" class="nav-cta">ツールを使う →</a>
+      </nav>
+      <button class="nav-toggle" aria-label="メニュー"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <nav class="breadcrumb"><a href="../index.html">Home</a><span>›</span><span>BS Strategy Edge</span></nav>
+    <p class="page-eyebrow">Basic Strategy Reference</p>
+    <h1 class="page-title">BS Strategy Edge</h1>
+    <p class="page-desc">ビデオブラックジャック専用のベーシックストラテジー参照ツール。ディーラーのアップカードとプレイヤーの手札を選択するだけで最適アクション（HIT/STAND/DOUBLE/SPLIT）を即座に表示。バスト率も同時計算。外部JSファイルなしのHTML単体動作。</p>
+    <a href="https://blackjack.cl3x.com/bs-strategy-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">ツールを無料で使う →</a>
+  </div>
+
+  <div class="specs-section">
+
+    <div class="detail-section">
+      <h2>基本仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>ツール種別</code></td><td class="logic-val">Decision Matrix / Basic Strategy Reference</td></tr>
+      <tr><td class="logic-key"><code>対象</code></td><td class="logic-val">ビデオブラックジャック（固定ルール）</td></tr>
+      <tr><td class="logic-key"><code>入力A</code></td><td class="logic-val">ディーラーのアップカード（2〜A）</td></tr>
+      <tr><td class="logic-key"><code>入力B</code></td><td class="logic-val">プレイヤーの手札（ハード / ソフト / ペア）</td></tr>
+      <tr><td class="logic-key"><code>出力</code></td><td class="logic-val">最適アクション（HIT/STAND/DOUBLE/SPLIT）＋バスト率</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>実装アルゴリズム</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">JavaScriptソースコードから抽出したコアロジックです。</p>
+      <pre class="code-block"><code>// ストラテジーテーブル（HTMLインライン実装）
+// 外部JSファイルなし（bs-strategy-edgeのコピー.htmlに内蔵）
+
+// ① ストラテジーテーブル（2次元マップ）
+// キー: [playerHand][dealerUpcard]
+const strategy = {
+    'hard9':  { 2:'H', 3:'D', 4:'D', 5:'D', 6:'D', 7:'H', ... },
+    'hard10': { 2:'D', 3:'D', 4:'D', 5:'D', 6:'D', 7:'D', 8:'D', 9:'D', 10:'H', A:'H' },
+    'hard11': { 2:'D', 3:'D', 4:'D', 5:'D', 6:'D', 7:'D', 8:'D', 9:'D', 10:'D', A:'H' },
+    // Soft totals, Pairs等も同様に定義
+    // H=Hit, S=Stand, D=Double, SP=Split
+};
+
+// ② バスト確率計算
+function calcBustProbability(handTotal) {
+    var bustCount = 0;
+    for (var card = 1; card &lt;= 13; card++) {
+        var value = Math.min(card, 10);  // 10以上は10扱い
+        if (handTotal + value &gt; 21) bustCount++;
+    }
+    return (bustCount / 13 * 100).toFixed(1) + '%';
+}
+// カード分布: 2-9各1/13, 10/J/Q/K合計4/13, A=1/13</code></pre>
+    </div>
+
+    <div class="detail-section">
+      <h2>数式・計算仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>テーブルの次元</code></td><td class="logic-val">プレイヤー手札 × ディーラーアップカード</td></tr>
+      <tr><td class="logic-key"><code>バスト確率</code></td><td class="logic-val">bustCount / 13（均等分布の仮定）</td></tr>
+      <tr><td class="logic-key"><code>10枚カードの重み</code></td><td class="logic-val">4/13（10, J, Q, K）</td></tr>
+      <tr><td class="logic-key"><code>Aの扱い</code></td><td class="logic-val">1 or 11（ソフトハンドの場合は11として計算）</td></tr>
+      <tr><td class="logic-key"><code>判定根拠</code></td><td class="logic-val">ビデオBJの固定ルールに最適化されたEV計算結果</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>メリット・デメリット</h2>
+      <h3>✓ メリット</h3>
+    <ul>
+      <li>外部JS不要でHTML単体動作（ロードが軽い）</li>
+      <li>ストラテジーテーブルをマップで実装し変更に対応しやすい</li>
+      <li>バスト確率の即時表示でリスクを数値で把握できる</li>
+    </ul>
+      <h3>✗ デメリット・注意点</h3>
+    <ul>
+      <li>ビデオBJの固定ルール専用（ライブBJやカスタムルールには非対応）</li>
+      <li>カードカウンティングやデッキ組成の変動を考慮しない</li>
+    </ul>
+    </div>
+
+    <div class="cta-block">
+      <p>実際のツールはこちらから無料・登録不要で使えます</p>
+      <a href="https://blackjack.cl3x.com/bs-strategy-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">BS Strategy Edge を使ってみる →</a>
+    </div>
+
+  </div>
+
+  <div class="other-tools">
+    <div class="other-tools-inner">
+      <h2>他のツール</h2>
+      <div class="other-tools-grid">
+        <a href="martingale-edge.html" class="other-tool-link">Martingale Edge</a>
+        <a href="parlay-edge.html" class="other-tool-link">Parlay Edge</a>
+        <a href="dalembert-edge.html" class="other-tool-link">D'Alembert Edge</a>
+        <a href="oscars-grind-edge.html" class="other-tool-link">Oscar's Grind Edge</a>
+        <a href="montecarlo-edge.html" class="other-tool-link">Montecarlo Edge</a>
+        <a href="labouchere-edge.html" class="other-tool-link">Labouchere Edge</a>
+        <a href="reverse-labouchere-edge.html" class="other-tool-link">Reverse Labouchere Edge</a>
+        <a href="fibonacci-edge.html" class="other-tool-link">Fibonacci Edge</a>
+        <a href="2in1-edge.html" class="other-tool-link">2in1 Edge</a>
+        <a href="winners-edge.html" class="other-tool-link">Winners Edge</a>
+        <a href="champion-game-edge.html" class="other-tool-link">Champion Game Edge</a>
+        <a href="31-system-edge.html" class="other-tool-link">31 System Edge</a>
+        <a href="goodman-edge.html" class="other-tool-link">Goodman Edge</a>
+        <a href="barnett-edge.html" class="other-tool-link">Barnett Edge</a>
+        <a href="paroli137-edge.html" class="other-tool-link">Paroli137 Edge</a>
+        <a href="vegasprogression-edge.html" class="other-tool-link">Vegas Progression Edge</a>
+        <a href="east-coast-progression-edge.html" class="other-tool-link">East Coast Progression Edge</a>
+        <a href="onehalfup-edge.html" class="other-tool-link">One Half Up Edge</a>
+        <a href="baccarat-pattern-tracker.html" class="other-tool-link">Baccarat Pattern Tracker</a>
+        <a href="baccarat-pattern-tracker-daai-ngaan-jai.html" class="other-tool-link">Baccarat Pattern Tracker 大眼仔</a>
+        <a href="spispi.html" class="other-tool-link">スピスピ</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></div>
+      <p class="footer-desc">全ツールは <a href="https://cl3x.com/" target="_blank" rel="noopener noreferrer nofollow">cl3x.com</a> およびサブドメインにて無料公開中。</p>
+      <p class="footer-note">⚠ 当ツールはエンターテインメント目的です。ギャンブルへの参加は自己責任において行ってください。</p>
+    </div>
+  </footer>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

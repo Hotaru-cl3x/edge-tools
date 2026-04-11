@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baccarat Pattern Tracker 大眼仔 — 技術仕様書 | Edge Tools</title>
+  <meta name="description" content="Baccarat Pattern Tracker 大眼仔の実装アルゴリズム・状態管理・数式を解説する技術仕様書。バカラの派生路「大眼仔」をリアルタイム自動計算・描画するツール（big-eye-road.js）。大路から大眼仔を算出するアルゴリズムをJavaScriptで完">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></a>
+      <nav class="nav-main">
+        <a href="../index.html#betting">ベッティング</a>
+        <a href="../index.html#analysis">分析</a>
+        <a href="../index.html#blackjack">ブラックジャック</a>
+        <a href="https://baccarat.cl3x.com/baccarat-pattern-tracker-daai-ngaan-jai/" target="_blank" rel="noopener noreferrer nofollow" class="nav-cta">ツールを使う →</a>
+      </nav>
+      <button class="nav-toggle" aria-label="メニュー"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <nav class="breadcrumb"><a href="../index.html">Home</a><span>›</span><span>Baccarat Pattern Tracker 大眼仔</span></nav>
+    <p class="page-eyebrow">Derived Road Analysis</p>
+    <h1 class="page-title">Baccarat Pattern Tracker 大眼仔</h1>
+    <p class="page-desc">バカラの派生路「大眼仔」をリアルタイム自動計算・描画するツール（big-eye-road.js）。大路から大眼仔を算出するアルゴリズムをJavaScriptで完全実装。各エントリを正（赤輪）・誤（青輪）に自動分類し、パターン検出と狙い目アドバイスを表示。</p>
+    <a href="https://baccarat.cl3x.com/baccarat-pattern-tracker-daai-ngaan-jai/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">ツールを無料で使う →</a>
+  </div>
+
+  <div class="specs-section">
+
+    <div class="detail-section">
+      <h2>基本仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>ツール種別</code></td><td class="logic-val">Derived Road Pattern Detection</td></tr>
+      <tr><td class="logic-key"><code>対象</code></td><td class="logic-val">バカラ 大眼仔（Big Eye Boy）</td></tr>
+      <tr><td class="logic-key"><code>入力</code></td><td class="logic-val">大路と共通のBANKER / PLAYER / TIE</td></tr>
+      <tr><td class="logic-key"><code>判定</code></td><td class="logic-val">正（赤輪）/ 誤（青輪）自動分類</td></tr>
+      <tr><td class="logic-key"><code>複雑度</code></td><td class="logic-val">Medium（操作）/ Very High（内部）</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>実装アルゴリズム</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">JavaScriptソースコードから抽出したコアロジックです。</p>
+      <pre class="code-block"><code>// 大眼仔計算コアロジック（big-eye-road.js）
+function calcBigEyeRoad(arr) {
+    var d = buildDairo(arr);  // 大路を構築
+    var bigEye = [];
+    var pd = {};              // 列ごとの深さ（エントリ数）
+
+    for (var i = 0; i &lt; cells.length; i++) {
+        var col = cell.col, row = cell.row;
+        pd[col] = (pd[col] || 0) + 1;
+
+        var result;
+        if (row === 0) {
+            // 新しい罫線の開始: 前の2列の深さを比較
+            var p1 = prevPD[col-1] || 0;
+            var p2 = col &gt;= 2 ? (prevPD[col-2] || 0) : 0;
+            result = (p1 === p2) ? 'positive' : 'negative';
+        } else {
+            // 罫線の継続: 隣の列に同じ行があるか確認
+            var hasLeft = grid[row] &amp;&amp; grid[row][col-1] !== undefined;
+            var hasLeftAbove = row &gt; 0 &amp;&amp; grid[row-1] &amp;&amp;
+                               grid[row-1][col-1] !== undefined;
+            if (hasLeft)          result = 'positive'; // 赤輪
+            else if (hasLeftAbove) result = 'negative'; // 青輪
+            else                   result = 'positive';
+        }
+        bigEye.push({ result, col, row });
+    }
+}</code></pre>
+    </div>
+
+    <div class="detail-section">
+      <h2>数式・計算仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>正（赤輪）判定 row=0</code></td><td class="logic-val">前列の深さ = 前々列の深さ</td></tr>
+      <tr><td class="logic-key"><code>誤（青輪）判定 row=0</code></td><td class="logic-val">前列の深さ != 前々列の深さ</td></tr>
+      <tr><td class="logic-key"><code>正（赤輪）判定 row>0</code></td><td class="logic-val">左隣の同行にエントリが存在する</td></tr>
+      <tr><td class="logic-key"><code>誤（青輪）判定 row>0</code></td><td class="logic-val">左隣の同行にはなく左隣1行上に存在する</td></tr>
+      <tr><td class="logic-key"><code>アドバイス発動条件</code></td><td class="logic-val">末尾の赤連続 >= 2</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>メリット・デメリット</h2>
+      <h3>✓ メリット</h3>
+    <ul>
+      <li>大路から大眼仔を数学的に正確に計算する完全実装</li>
+      <li>row=0とrow>0で異なる判定ロジックを使い分ける厳密な設計</li>
+      <li>連続する赤/青のカウントで流れの安定性を自動判定</li>
+    </ul>
+      <h3>✗ デメリット・注意点</h3>
+    <ul>
+      <li>大眼仔アルゴリズムは複雑でデバッグが困難</li>
+      <li>派生路はあくまで大路の視覚的解釈であり予測の根拠にはならない</li>
+    </ul>
+    </div>
+
+    <div class="cta-block">
+      <p>実際のツールはこちらから無料・登録不要で使えます</p>
+      <a href="https://baccarat.cl3x.com/baccarat-pattern-tracker-daai-ngaan-jai/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">Baccarat Pattern Tracker 大眼仔 を使ってみる →</a>
+    </div>
+
+  </div>
+
+  <div class="other-tools">
+    <div class="other-tools-inner">
+      <h2>他のツール</h2>
+      <div class="other-tools-grid">
+        <a href="martingale-edge.html" class="other-tool-link">Martingale Edge</a>
+        <a href="parlay-edge.html" class="other-tool-link">Parlay Edge</a>
+        <a href="dalembert-edge.html" class="other-tool-link">D'Alembert Edge</a>
+        <a href="oscars-grind-edge.html" class="other-tool-link">Oscar's Grind Edge</a>
+        <a href="montecarlo-edge.html" class="other-tool-link">Montecarlo Edge</a>
+        <a href="labouchere-edge.html" class="other-tool-link">Labouchere Edge</a>
+        <a href="reverse-labouchere-edge.html" class="other-tool-link">Reverse Labouchere Edge</a>
+        <a href="fibonacci-edge.html" class="other-tool-link">Fibonacci Edge</a>
+        <a href="2in1-edge.html" class="other-tool-link">2in1 Edge</a>
+        <a href="winners-edge.html" class="other-tool-link">Winners Edge</a>
+        <a href="champion-game-edge.html" class="other-tool-link">Champion Game Edge</a>
+        <a href="31-system-edge.html" class="other-tool-link">31 System Edge</a>
+        <a href="goodman-edge.html" class="other-tool-link">Goodman Edge</a>
+        <a href="barnett-edge.html" class="other-tool-link">Barnett Edge</a>
+        <a href="paroli137-edge.html" class="other-tool-link">Paroli137 Edge</a>
+        <a href="vegasprogression-edge.html" class="other-tool-link">Vegas Progression Edge</a>
+        <a href="east-coast-progression-edge.html" class="other-tool-link">East Coast Progression Edge</a>
+        <a href="onehalfup-edge.html" class="other-tool-link">One Half Up Edge</a>
+        <a href="baccarat-pattern-tracker.html" class="other-tool-link">Baccarat Pattern Tracker</a>
+        <a href="spispi.html" class="other-tool-link">スピスピ</a>
+        <a href="bs-strategy-edge.html" class="other-tool-link">BS Strategy Edge</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></div>
+      <p class="footer-desc">全ツールは <a href="https://cl3x.com/" target="_blank" rel="noopener noreferrer nofollow">cl3x.com</a> およびサブドメインにて無料公開中。</p>
+      <p class="footer-note">⚠ 当ツールはエンターテインメント目的です。ギャンブルへの参加は自己責任において行ってください。</p>
+    </div>
+  </footer>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

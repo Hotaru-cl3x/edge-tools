@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fibonacci Edge — 技術仕様書 | Edge Tools</title>
+  <meta name="description" content="Fibonacci Edgeの実装アルゴリズム・状態管理・数式を解説する技術仕様書。フィボナッチ数列ベースのベッティングシステム（内部実装名：cocomo-tool.js）。2連敗でシステム稼働し、以降フィボナッチ数列に従ってベットを増やす。3">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></a>
+      <nav class="nav-main">
+        <a href="../index.html#betting">ベッティング</a>
+        <a href="../index.html#analysis">分析</a>
+        <a href="../index.html#blackjack">ブラックジャック</a>
+        <a href="https://cl3x.com/fibonacci-edge/" target="_blank" rel="noopener noreferrer nofollow" class="nav-cta">ツールを使う →</a>
+      </nav>
+      <button class="nav-toggle" aria-label="メニュー"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <nav class="breadcrumb"><a href="../index.html">Home</a><span>›</span><span>Fibonacci Edge</span></nav>
+    <p class="page-eyebrow">Sequence-based（3倍配当専用）</p>
+    <h1 class="page-title">Fibonacci Edge</h1>
+    <p class="page-desc">フィボナッチ数列ベースのベッティングシステム（内部実装名：cocomo-tool.js）。2連敗でシステム稼働し、以降フィボナッチ数列に従ってベットを増やす。3倍配当エリア（コラム・ダズン）専用設計。</p>
+    <a href="https://cl3x.com/fibonacci-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">ツールを無料で使う →</a>
+  </div>
+
+  <div class="specs-section">
+
+    <div class="detail-section">
+      <h2>基本仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>システム種別</code></td><td class="logic-val">Sequence-based / Negative Progression</td></tr>
+      <tr><td class="logic-key"><code>対象ゲーム</code></td><td class="logic-val">ルーレット 3倍配当エリア（コラム・ダズン）専用</td></tr>
+      <tr><td class="logic-key"><code>フェーズ</code></td><td class="logic-val">待機（1単位）→ 稼働（フィボナッチ数列）</td></tr>
+      <tr><td class="logic-key"><code>稼働トリガー</code></td><td class="logic-val">2連敗（waitLose >= 2）</td></tr>
+      <tr><td class="logic-key"><code>リスク</code></td><td class="logic-val">Medium</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>実装アルゴリズム</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">JavaScriptソースコードから抽出したコアロジックです。</p>
+      <pre class="code-block"><code>// 2フェーズ制ロジック（cocomo-tool.js）
+S = { phase:'wait', waitLose:0, seq:[], ... }
+
+// 稼働時のベット計算（フィボナッチ: seq末尾2要素の和）
+var bet = S.seq.length &gt;= 2
+    ? S.seq[S.seq.length-2] + S.seq[S.seq.length-1]
+    : S.seq[0];
+
+// 待機フェーズ
+if (S.phase === 'wait') {
+    if (r === 'win') {
+        S.pnl += ba * 2;  // 3倍配当のため+2倍
+        S.waitLose = 0; S.seq = [];
+    } else {
+        S.pnl -= ba; S.waitLose++;
+        if (S.waitLose &gt;= 2) {
+            S.phase = 'active'; S.seq = [1, 1];  // 稼働開始
+        }
+    }
+}
+// 稼働フェーズ
+if (r === 'win') {
+    S.pnl += ba * 2;               // 3倍配当
+    S.phase = 'wait'; S.seq = [];  // 勝ちで即リセット
+} else {
+    S.pnl -= ba; S.seq.push(bet); // 負けで次のFib値を追加
+}</code></pre>
+    </div>
+
+    <div class="detail-section">
+      <h2>数式・計算仕様</h2>
+    <table class="logic-table"><tbody>
+      <tr><td class="logic-key"><code>フィボナッチ数列</code></td><td class="logic-val">[1, 1, 2, 3, 5, 8, 13, 21, ...]</td></tr>
+      <tr><td class="logic-key"><code>N番目のベット（稼働後）</code></td><td class="logic-val">fib(N+1) 単位（seq末尾2要素の和）</td></tr>
+      <tr><td class="logic-key"><code>3倍配当の収支</code></td><td class="logic-val">勝ち: +ba×2 / 負け: -ba</td></tr>
+      <tr><td class="logic-key"><code>稼働トリガー</code></td><td class="logic-val">waitLose >= 2</td></tr>
+      <tr><td class="logic-key"><code>稼働終了トリガー</code></td><td class="logic-val">稼働中に1勝（即時リセット）</td></tr>
+    </tbody></table>
+    </div>
+
+    <div class="detail-section">
+      <h2>メリット・デメリット</h2>
+      <h3>✓ メリット</h3>
+    <ul>
+      <li>2連敗トリガーで不要な稼働を回避</li>
+      <li>3倍配当に対応した収支計算（+ba×2）</li>
+      <li>勝ち即リセットで稼働期間を最短化</li>
+    </ul>
+      <h3>✗ デメリット・注意点</h3>
+    <ul>
+      <li>3倍配当専用のため汎用性が低い</li>
+      <li>深い連敗でフィボナッチ数列が大きな値に到達</li>
+    </ul>
+    </div>
+
+    <div class="cta-block">
+      <p>実際のツールはこちらから無料・登録不要で使えます</p>
+      <a href="https://cl3x.com/fibonacci-edge/" target="_blank" rel="noopener noreferrer nofollow" class="page-cta">Fibonacci Edge を使ってみる →</a>
+    </div>
+
+  </div>
+
+  <div class="other-tools">
+    <div class="other-tools-inner">
+      <h2>他のツール</h2>
+      <div class="other-tools-grid">
+        <a href="martingale-edge.html" class="other-tool-link">Martingale Edge</a>
+        <a href="parlay-edge.html" class="other-tool-link">Parlay Edge</a>
+        <a href="dalembert-edge.html" class="other-tool-link">D'Alembert Edge</a>
+        <a href="oscars-grind-edge.html" class="other-tool-link">Oscar's Grind Edge</a>
+        <a href="montecarlo-edge.html" class="other-tool-link">Montecarlo Edge</a>
+        <a href="labouchere-edge.html" class="other-tool-link">Labouchere Edge</a>
+        <a href="reverse-labouchere-edge.html" class="other-tool-link">Reverse Labouchere Edge</a>
+        <a href="2in1-edge.html" class="other-tool-link">2in1 Edge</a>
+        <a href="winners-edge.html" class="other-tool-link">Winners Edge</a>
+        <a href="champion-game-edge.html" class="other-tool-link">Champion Game Edge</a>
+        <a href="31-system-edge.html" class="other-tool-link">31 System Edge</a>
+        <a href="goodman-edge.html" class="other-tool-link">Goodman Edge</a>
+        <a href="barnett-edge.html" class="other-tool-link">Barnett Edge</a>
+        <a href="paroli137-edge.html" class="other-tool-link">Paroli137 Edge</a>
+        <a href="vegasprogression-edge.html" class="other-tool-link">Vegas Progression Edge</a>
+        <a href="east-coast-progression-edge.html" class="other-tool-link">East Coast Progression Edge</a>
+        <a href="onehalfup-edge.html" class="other-tool-link">One Half Up Edge</a>
+        <a href="baccarat-pattern-tracker.html" class="other-tool-link">Baccarat Pattern Tracker</a>
+        <a href="baccarat-pattern-tracker-daai-ngaan-jai.html" class="other-tool-link">Baccarat Pattern Tracker 大眼仔</a>
+        <a href="spispi.html" class="other-tool-link">スピスピ</a>
+        <a href="bs-strategy-edge.html" class="other-tool-link">BS Strategy Edge</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo"><span class="logo-mark">E</span><span class="logo-text">EDGE<em>TOOLS</em></span></div>
+      <p class="footer-desc">全ツールは <a href="https://cl3x.com/" target="_blank" rel="noopener noreferrer nofollow">cl3x.com</a> およびサブドメインにて無料公開中。</p>
+      <p class="footer-note">⚠ 当ツールはエンターテインメント目的です。ギャンブルへの参加は自己責任において行ってください。</p>
+    </div>
+  </footer>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
