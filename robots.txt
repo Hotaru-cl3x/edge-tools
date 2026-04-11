@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://Hotaru-cl3x.github.io/edge-tools/sitemap.xml
